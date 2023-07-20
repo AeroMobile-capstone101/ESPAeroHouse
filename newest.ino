@@ -35,7 +35,7 @@ unsigned long misterOffTime = 300000;
 unsigned long paramReadingInterval = 10000;
 unsigned long paramReadingMillis = 0;
 unsigned long phReadingMillis = 0;
-unsigned long phReadingInterval = 10000;
+unsigned long phReadingInterval = 3600000;
 unsigned long dbUpdateMillis = 0;
 unsigned long wifiCheckMillis = 0;
 
@@ -73,39 +73,6 @@ String documentPath = "system_collection/" + houseName;
 
 WebServer server(80);
 
-// function prototype
-void connectWiFi();
-void switchToAPMode();
-void mistMakerControl();
-void LedControl();
-void paramReading();
-void handleRoot();
-void handleSaveWiFiCredentials();
-void handlesaveMisterConfig();
-void handleWiFiConnect();
-void handleMisterConfig();
-void toggleMistMakers(bool state);
-void paramReading(unsigned long currentMillis);
-void dbGetSendFirestore(unsigned long currentMillis);
-void updateSummaryArray(String timeOfTheDay);
-void updateParameterFields();
-void checkUploadSummary();
-void sendNotification();
-bool readConfigSPIFFS();
-bool saveConfigSPIFFS();
-bool saveWiFiCredentialsSPIFFS();
-bool saveAverageParamsSPIFFS();
-bool saveMisterConfigSPIFFS();
-bool writeFile(fs::FS& fs, String filename, String message);
-float phRead();
-float getMistOff();
-float getMistOn();
-String getDeviceIDToken();
-String readFile(fs::FS& fs, String filename);
-String SendHTML();
-String refreshPage(int time);
-String getLightColor();
-
 // ------------------ SETUP and LOOP ----------------------
 
 void setup() {
@@ -119,20 +86,20 @@ void setup() {
   delay(1000);
 
 
-  // if (!SPIFFS.begin(true)) {
-  //   Serial.println("setup -> SPIFFS Mount Failed");
-  // } else {
-  //   Serial.println("setup -> SPIFFS Mounted Successfully");
+  if (!SPIFFS.begin(true)) {
+    Serial.println("setup -> SPIFFS Mount Failed");
+  } else {
+    Serial.println("setup -> SPIFFS Mounted Successfully");
 
-  //   if (!readConfigSPIFFS()) {
-  //     Serial.println("setup -> Could not read Config file -> initializing new file");
-  //     if (saveConfigSPIFFS()) {
-  //       Serial.println("setup -> Config file saved");
-  //     }
-  //   }
-  //   Serial.println("setup -> readFile Successful");
-  //   connectWiFi();
-  // }
+    if (!readConfigSPIFFS()) {
+      Serial.println("setup -> Could not read Config file -> initializing new file");
+      if (saveConfigSPIFFS()) {
+        Serial.println("setup -> Config file saved");
+      }
+    }
+    Serial.println("setup -> readFile Successful");
+    connectWiFi();
+  }
 }
 
 void loop() {
@@ -181,6 +148,7 @@ void loop() {
 void connectWiFi() {
   if (wifi_ssid.length() <= 0 && wifi_password.length() <= 0) {
     Serial.print("No Wifi Credentials Found in SPIFFS!...");
+    switchToAPMode();
     return;
   }
 
@@ -195,7 +163,7 @@ void connectWiFi() {
   Serial.print("Connecting to Wi-Fi..");
 
   byte attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 10) {
     Serial.print(".");
     delay(1000);
     attempts++;
@@ -262,13 +230,14 @@ void configFirebase() {
 
 void dbGetSendFirestore(unsigned long currentMillis) {
   if (currentMillis - dbUpdateMillis >= 10000) {
-    if (getLightColor() == "red") {
+    String light = getLightColor();
+    if (light == "red") {
       redLedState = true;
       blueLedState = false;
-    } else if (getLightColor() == "blue") {
+    } else if (light == "blue") {
       redLedState = false;
       blueLedState = true;
-    } else if (getLightColor() == "purple") {
+    } else if (light == "purple") {
       blueLedState = true;
       redLedState = true;
     } else {
@@ -276,15 +245,15 @@ void dbGetSendFirestore(unsigned long currentMillis) {
       redLedState = false;
     }
 
-    unsigned long mistOn = getMistOn();
-    unsigned long mistOff = getMistOff();
+    float mistOn = getMistOn();
+    float mistOff = getMistOff();
 
     if (mistOn != misterOnTime || mistOff != misterOnTime) {
       misterOnTime = mistOn;
       misterOffTime = mistOff;
       Serial.println("dbGetSendFirestore() function");
-      Serial.printf("-------------------------- GET MISTER ON = %d------------------------------/n,", misterOnTime);
-      Serial.printf("-------------------------- GET MISTER OFF = %d------------------------------/n", misterOffTime);
+      Serial.printf("-------------------------- GET MISTER ON = %l------------------------------/n,", misterOnTime);
+      Serial.printf("-------------------------- GET MISTER OFF = %l------------------------------/n", misterOffTime);
       saveMisterConfigSPIFFS();
     }
 
@@ -358,8 +327,8 @@ void updateSummaryArray(String timeOfTheDay) {
   strftime(date, sizeof(date), "%Y-%m-%d", &timeinfo);
 
       Serial.println("updateSummaryArray() function");
-      Serial.printf("-------------------------- MISTER ON = %d------------------------------, misterOnTime");
-      Serial.printf("-------------------------- MISTER OFF = %d------------------------------, misterOffTime");
+      Serial.printf("-------------------------- MISTER ON = %l------------------------------", misterOnTime);
+      Serial.printf("-------------------------- MISTER OFF = %l------------------------------", misterOffTime);
 
   content.set("values/[0]/mapValue/fields/created_at/stringValue", date);
   content.set("values/[0]/mapValue/fields/time_of_the_day/stringValue", timeOfTheDay);
@@ -394,8 +363,8 @@ void updateParameterFields() {
   // misterOnTime = getMistOn();
   // misterOffTime = getMistOff();
   Serial.println("updateParameterFields() function");
-      Serial.printf("-------------------------- MISTER ON = %d------------------------------", misterOnTime);
-      Serial.printf("-------------------------- MISTER OFF = %d------------------------------", misterOffTime);
+      Serial.printf("-------------------------- MISTER ON = %l------------------------------", misterOnTime);
+      Serial.printf("-------------------------- MISTER OFF = %l------------------------------", misterOffTime);
 
   content1.set("fields/_temperature/doubleValue", temperatureValue);
   content1.set("fields/_humidity/doubleValue", humidityValue);
@@ -446,7 +415,7 @@ String getLightColor() {
   return lightC;
 }
 
-float getMistOff() {
+unsigned long getMistOff() {
   unsigned long mistOff=0;
   String fieldPath = "_mistOffTime";
 
@@ -465,7 +434,8 @@ float getMistOff() {
     payload.get(jsonData, "fields/_mistOffTime/doubleValue", true);
     mistOff = jsonData.doubleValue;
     //Serial.print("Misting Frequency value: ");
-    //Serial.println(mistOff);
+    Serial.print("--------MISTEROFF VALUE FROM FIRESTORE-------");
+    Serial.println(mistOff);
 
   } else {
     Serial.println(fbdo.errorReason());
@@ -475,7 +445,7 @@ float getMistOff() {
   return mistOff;
 }
 
-float getMistOn() {
+unsigned long getMistOn() {
   unsigned long mistOn=0;
   String fieldPath = "_mistOnTime";
 
@@ -494,7 +464,8 @@ float getMistOn() {
     payload.get(jsonData, "fields/_mistOnTime/doubleValue", true);
     mistOn = jsonData.doubleValue;
     //Serial.print("Misting Frequency value: ");
-    //Serial.println(mistOn);
+    Serial.print("--------MISTERON VALUE FROM FIRESTORE-------");
+    Serial.println(mistOn);
 
   } else {
     Serial.println(fbdo.errorReason());
@@ -618,20 +589,18 @@ void sendNotification() {
 
 void paramReading(unsigned long currentMillis) {
   Serial.println("Param Reading Function");
-  // if (currentMillis - phReadingMillis >= phReadingInterval){
-  //   phReadingMillis = currentMillis;
+  if (currentMillis - phReadingMillis >= phReadingInterval){
+    phReadingMillis = currentMillis;
 
-  //   pHValue = (int)(phRead()*10) / 10.0;
-  //   phReadingsCount++;
-  //   readingsSumPH += pHValue;
+    pHValue = (int)(phRead()*10) / 10.0;
+    phReadingsCount++;
+    readingsSumPH += pHValue;
     
-  //   Serial.println("pH Level: " + String(pHValue) + "pH");
-  // }
+    Serial.println("pH Level: " + String(pHValue) + "pH");
+  }
   if (currentMillis - paramReadingMillis >= paramReadingInterval) {
     temperatureValue = isnan(in_dht.readTemperature()) ? 0 : in_dht.readTemperature();
     humidityValue = isnan(in_dht.readHumidity()) ? 0 : in_dht.readHumidity();
-    pHValue = (int)(phRead()*10) / 10.0;
-
 
     // upload parameters to firestore
     readingsCount++;
@@ -744,8 +713,8 @@ bool readConfigSPIFFS() {
   }
 
   Serial.println("readConfigSPIFFS() function");
-      Serial.printf("-------------------------- MISTER ON = %d------------------------------\n, misterOnTime");
-      Serial.printf("-------------------------- MISTER OFF = %d------------------------------\n, misterOffTime");
+      Serial.printf("-------------------------- MISTER ON = %l------------------------------\n", misterOnTime);
+      Serial.printf("-------------------------- MISTER OFF = %l------------------------------\n", misterOffTime);
 
   String _wifi_ssid = doc["wifi_ssid"];
   String _wifi_password = doc["wifi_pass"];
@@ -818,8 +787,8 @@ bool saveMisterConfigSPIFFS() {
 
   
   Serial.println("saveMisterConfigSPIFFS() function");
-      Serial.printf("-------------------------- MISTER ON = %d------------------------------\n, misterOnTime");
-      Serial.printf("-------------------------- MISTER OFF = %d------------------------------\n, misterOffTime");  
+      Serial.printf("-------------------------- MISTER ON = %l------------------------------\n, misterOnTime");
+      Serial.printf("-------------------------- MISTER OFF = %l------------------------------\n, misterOffTime");  
 
   doc["mister_on_time"] = String(misterOnTime);
   doc["mister_off_time"] = String(misterOffTime);
@@ -919,8 +888,8 @@ void handlesaveMisterConfig() {
 
     
   Serial.println("handlesaveMisterConfig() function");
-      Serial.printf("-------------------------- MISTER ON = %d------------------------------\n, misterOnTime");
-      Serial.printf("-------------------------- MISTER OFF = %d------------------------------\n, misterOffTime"); 
+      Serial.printf("-------------------------- MISTER ON = %l------------------------------\n, misterOnTime");
+      Serial.printf("-------------------------- MISTER OFF = %l------------------------------\n, misterOffTime"); 
 
     String MisterOnTime = server.arg("onTime");
     String MisterOffTime = server.arg("offTime");
