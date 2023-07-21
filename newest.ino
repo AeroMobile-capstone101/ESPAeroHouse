@@ -6,6 +6,7 @@
 #include <SPIFFS.h>
 #include <Firebase_ESP_Client.h>
 #include <addons/TokenHelper.h>
+#include "time.h"
 
 // pins
 DHT in_dht(13, DHT11);
@@ -23,7 +24,7 @@ DHT in_dht(13, DHT11);
 const char PRIVATE_KEY[] PROGMEM = "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDWdc02SFqEIlXC\n/BHSdsDrFvns8SaWkUNjRxSdRYB4qR/mUd0Hn52ZmutxhsnBF/0Xv9p4YhXngn7V\ntmrPnLuiNee3kYPfu0bgoO82bE/V3O6j31DoiMioFnrEx0g4HDnYGr0UhCYd3L48\nTZLzWv5vTiNmk4cXFRGdbUebk/a73+osUIOM+NASIHQ9KQDUAD/Frg5Uqcw/y2HF\nxUFhw1cv7xYtmjI9IIgNdlk1C7WFZjCvDO1D9oSdr+h+vELFU6rNXbWIzQUAnCpq\nT3kILtT82YDKTJ3UxDognTKaJJluvJDO8RcJ4gcNUXoqB5S9yIC5L5PVHgWXuoA9\nvT/EBV4pAgMBAAECggEAAUFEN6aZvP80cEUoV4pxW47RXJUWrDfiZJDUao0vEMWw\nlZjyCarh8bWp3gqzYIli5kItpZmxVh753gdIvblFkc/t8LGNy3/djM/0RmXA29gE\nn3ndj9bJEc673i3qWsWzgvO5Gochb/hMNq8fhoQITB9xbpa7aiOp7Dlo+1yUy4mj\npVjesmUB52fsMrA07czbZy2i0wKcHiMIzQV0JWYN2gcHW3KUwGXdl37oOXKM0qsV\nFHFWoI1K+0nE/y3OZp1S78eeZPHy2CZazBDRtAo5xNKTj8XE7uid8ksy8jD8ThRv\nKF6lIdxs2rx7w3J4AH32JY9Eq6t4poOTeXBUjesMQQKBgQD+DIGTw4ZFvwvokfYG\npVNEzkA8KUZATC71tM0x2+/VbsWTB+8d320QRNwNtnfHGvE4WMVoqIpcgSqfIc+N\nTl3st1Uv0HFwZz8mJpJVDMmTbXQAdZ5C7du0PjvIb5o8i9pOYJMTnKVX+8Lz/GtU\nL986XuhgnQW0iv3AO0UWFxLV0QKBgQDYG3V1HhaODcW0+130gOztl5yL+wlYDYsb\nl066grBLS8F0JLVLHjT6C7DYG5lsxKMyusxPnHonDlWziR0NTGvcuTV2/eLlo5PK\nPfy17sKBRxJ4a9LupHR37PbIXKa8TNzCupkWx/vJ/vlUfjoojJm+1CkB3OGy2oVa\nM1R0RhQg2QKBgFaPeE8andOB5tLVeNiG2DpndCeLgK5DxvRdKFVGtQ8p8RPJ7kVl\nbUnPzJK3i1RB79LdHFYupwYh1J3n7UoeW45eYR4rjZtY8oFTPyTPeJdNAetuKABx\n/xwI4GHI9OqQVE/ERBi4lPXHiIONjBxhO1QuJktU9S6w9QjcqQt/zSEhAoGAEXku\n5xhWtIeyi66jayidf5x5oOvcVo1JySJT0ErO3Fe0vaJWMkuv9uPJGcApiJzhoTFv\nYaSCT/Qdw9V7Tt71/bPP+d4PYYf3ZCvc6gzzFyba/HejZ35OmH/FeG/dX25Lj0ct\nJ6Vl23BNUqKeKzcrGz3mTutAKIj4rVFnK7ua1wkCgYARleZsHG407uykN4eDa+qZ\nB4h9XCK5PWWWsnhHP6hLUHB9cEhm3YzMi9fQaWD+JYyOfT2Vizl1hdd1bK1VEv1m\n0M74xyFiFIJJsuUQywW/2eRQ0/aYJCKh+XeRZGwsn5tgpSennTvhs1NtsYG/bYe+\nFP4FuqXNRFvFgfoOPIgY1Q==\n-----END PRIVATE KEY-----\n";
 const char* ntpServer = "pool.ntp.org";
 const int gmtOffset_sec = 28800;
-const int daylightOffset_sec = 3600;
+const int daylightOffset_sec = 0;
 bool redLedState = true;
 bool blueLedState = true;
 bool mistMakerState = true;
@@ -32,10 +33,10 @@ bool isWebServerRunning = false;
 unsigned long mistMakerToggleMillis = 0;
 unsigned long misterOnTime = 300000;
 unsigned long misterOffTime = 300000;
-unsigned long paramReadingInterval = 10000;
+const unsigned long paramReadingInterval = 3000;
 unsigned long paramReadingMillis = 0;
 unsigned long phReadingMillis = 0;
-unsigned long phReadingInterval = 3600000;
+const unsigned long phReadingInterval = 3600000;
 unsigned long dbUpdateMillis = 0;
 unsigned long wifiCheckMillis = 0;
 
@@ -62,14 +63,14 @@ struct tm timeinfo;
 int currentHour = 0;
 
 StaticJsonDocument<256> doc;
-String config_filename = "/config.json";
+const String config_filename = "/config.json";
 
 // Firebase Object Instantation
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
-String houseName = "AeroHouse_4.0";
-String documentPath = "system_collection/" + houseName;
+const String houseName = "AeroHouse_6.0";
+const String documentPath = "system_collection/" + houseName;
 
 WebServer server(80);
 
@@ -100,11 +101,17 @@ void setup() {
     Serial.println("setup -> readFile Successful");
     connectWiFi();
   }
+
+  pHValue = (int)(phRead()*10) / 10.0;
+  phReadingsCount++;
+  readingsSumPH += pHValue;
 }
 
 void loop() {
   unsigned long currentMillis = millis();
-
+  if(!getLocalTime(&timeinfo))
+    Serial.println("Failed to obtain time");
+  currentHour = timeinfo.tm_hour;
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("Wifi Connected...");
 
@@ -113,7 +120,7 @@ void loop() {
       Serial.println("AP Mode is switch due to wifi has no internet...");
       return;
     }
-
+    Serial.println();
     if (isWebServerRunning) {
       server.stop();                // stop web server
       WiFi.softAPdisconnect(true);  // disable access point mode
@@ -126,18 +133,25 @@ void loop() {
       mistMakerControl(currentMillis);
       paramReading(currentMillis);
       dbGetSendFirestore(currentMillis);
-      LedControl();
     }
     //  mistMakerControl(currentMillis);
-    delay(500);
     return;
   }
+  // automatically reconnect to Wi-Fi after some time to see if internet connection has been restored
+  if(currentMillis - wifiCheckMillis >= 300000){
+    wifiCheckMillis = currentMillis;
+    readConfigSPIFFS();
+    connectWiFi();
+  }
 
+  // only runs if wi-fi connection is not configured
+  if(!isWebServerRunning){
+    switchToAPMode();
+  }
   // only runs if WiFi status is not connected and has no internet
   server.handleClient();
   mistMakerControl(currentMillis);
   paramReading(currentMillis);
-  delay(500);
 }
 
 
@@ -155,8 +169,10 @@ void connectWiFi() {
   WiFi.mode(WIFI_STA);  // set the esp wifi to station mode
 
   if (wifi_ssid.length() > 0 && wifi_password == "") {
+    Serial.println("Connecting to " + wifi_ssid + "without password");
     WiFi.begin(wifi_ssid.c_str());
   } else {
+    Serial.println("Connecting to " + wifi_ssid + " with password " + wifi_password);
     WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
   }
 
@@ -180,14 +196,12 @@ void connectWiFi() {
 
 void switchToAPMode() {
   Serial.println("ESP switch to AP_MODE");
-  IPAddress local_ip(192, 168, 1, 1);
-  IPAddress gateway(192, 168, 1, 1);
+  IPAddress local_ip(192, 168, 56, 5);
+  IPAddress gateway(192, 168, 56, 1);
   IPAddress mask(255, 255, 255, 0);
 
-  const char* ssid = "AeroHouse_AP";
-
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid);
+  WiFi.softAP(houseName.c_str());
   WiFi.softAPConfig(local_ip, gateway, mask);
   delay(200);
 
@@ -226,45 +240,53 @@ void configFirebase() {
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);  // include config time of ntp server
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+  }
 }
 
 void dbGetSendFirestore(unsigned long currentMillis) {
-  if (currentMillis - dbUpdateMillis >= 10000) {
-    String light = getLightColor();
-    if (light == "red") {
-      redLedState = true;
-      blueLedState = false;
-    } else if (light == "blue") {
-      redLedState = false;
-      blueLedState = true;
-    } else if (light == "purple") {
-      blueLedState = true;
-      redLedState = true;
-    } else {
+  if (currentMillis - dbUpdateMillis >= paramReadingInterval) {
+    Serial.print("Current Hour: ");
+    Serial.println(currentHour);
+    if(currentHour >= 7 && currentHour <= 18){
+      String light = getLightColor();
+      if (light == "red") {
+        redLedState = true;
+        blueLedState = false;
+      } else if (light == "blue") {
+        redLedState = false;
+        blueLedState = true;
+      } else if (light == "purple") {
+        blueLedState = true;
+        redLedState = true;
+      } else {
+        blueLedState = false;
+        redLedState = false;
+      }
+    }
+    else{
       blueLedState = false;
       redLedState = false;
     }
+    LedControl();
 
-    float mistOn = getMistOn();
-    float mistOff = getMistOff();
+    unsigned long mistOn = getMistOn();
+    unsigned long mistOff = getMistOff();
 
     if (mistOn != misterOnTime || mistOff != misterOnTime) {
       misterOnTime = mistOn;
       misterOffTime = mistOff;
-      Serial.println("dbGetSendFirestore() function");
-      Serial.printf("-------------------------- GET MISTER ON = %l------------------------------/n,", misterOnTime);
-      Serial.printf("-------------------------- GET MISTER OFF = %l------------------------------/n", misterOffTime);
-      saveMisterConfigSPIFFS();
     }
-
+    dbUpdateMillis = currentMillis;
     updateParameterFields();
   }
 
-  checkUploadSummary();
+  checkUploadSummary(currentHour);
 }
 
-void checkUploadSummary() {
-  int uploadTimes[] = { 7, 19 };  //advance in one hour to fit in Philippine Standard Time 6am and 6pm during upload
+void checkUploadSummary(int currentHour) {
+  int uploadTimes[] = { 6, 18 };  //advance in one hour to fit in Philippine Standard Time 6am and 6pm during upload
   bool uploadScheduled = false;
 
   String timeOfTheDay = "";
@@ -280,7 +302,6 @@ void checkUploadSummary() {
       timeOfTheDay = "PM";
     }
   }
-
 
   if (uploadScheduled) {
     getAverage();
@@ -317,26 +338,16 @@ void updateSummaryArray(String timeOfTheDay) {
 
   FirebaseJson content;
 
-
-  if (!getLocalTime(&timeinfo)) {
-    Serial.println("No time available (yet)");
-    return;
-  }
-
   char date[11];
   strftime(date, sizeof(date), "%Y-%m-%d", &timeinfo);
 
-      Serial.println("updateSummaryArray() function");
-      Serial.printf("-------------------------- MISTER ON = %l------------------------------", misterOnTime);
-      Serial.printf("-------------------------- MISTER OFF = %l------------------------------", misterOffTime);
-
   content.set("values/[0]/mapValue/fields/created_at/stringValue", date);
   content.set("values/[0]/mapValue/fields/time_of_the_day/stringValue", timeOfTheDay);
-  content.set("values/[0]/mapValue/fields/temperature/doubleValue", averageTemp);
-  content.set("values/[0]/mapValue/fields/humidity/doubleValue", averageHumid);
-  content.set("values/[0]/mapValue/fields/acidity/doubleValue", averagePH);
-  content.set("values/[0]/mapValue/fields/mistingOn/doubleValue", misterOnTime);
-  content.set("values/[0]/mapValue/fields/mistingOff/doubleValue", misterOffTime);
+  content.set("values/[0]/mapValue/fields/temperature/integerValue", averageTemp);
+  content.set("values/[0]/mapValue/fields/humidity/integerValue", averageHumid);
+  content.set("values/[0]/mapValue/fields/acidity/integerValue", averagePH);
+  content.set("values/[0]/mapValue/fields/mistingOn/integerValue", misterOnTime);
+  content.set("values/[0]/mapValue/fields/mistingOff/integerValue", misterOffTime);
   content.set("values/[0]/mapValue/fields/lightColor/stringValue", getLightColor());
 
 
@@ -355,37 +366,46 @@ void updateSummaryArray(String timeOfTheDay) {
     Serial.println(fbdo.errorReason());
 }
 
-void updateParameterFields() {
+bool checkFirestoreDocAvailable() {
+  if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), "_humidity")) {
+    Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
+    return true;
+  }
 
+  Serial.println(fbdo.errorReason());
+  return false;
+}
+
+void updateParameterFields() {
   // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create.ino
   FirebaseJson content1;
 
-  // misterOnTime = getMistOn();
-  // misterOffTime = getMistOff();
-  Serial.println("updateParameterFields() function");
-      Serial.printf("-------------------------- MISTER ON = %l------------------------------", misterOnTime);
-      Serial.printf("-------------------------- MISTER OFF = %l------------------------------", misterOffTime);
+  if (checkFirestoreDocAvailable()) {
+    content1.set("fields/_temperature/doubleValue", temperatureValue);
+    content1.set("fields/_humidity/doubleValue", humidityValue);
+    content1.set("fields/_acidity/doubleValue", pHValue);
 
-  content1.set("fields/_temperature/doubleValue", temperatureValue);
-  content1.set("fields/_humidity/doubleValue", humidityValue);
-  content1.set("fields/_acidity/doubleValue", pHValue);
-  content1.set("fields/_mistOffTime/doubleValue", misterOffTime);
-  content1.set("fields/_mistOnTime/doubleValue", misterOnTime);
-  content1.set("fields/_deviceToken/stringValue", getDeviceIDToken());
-  content1.set("fields/_lightColor/stringValue", (getLightColor() == "") ? "off" : getLightColor());
-
-
-
-  //Serial.print("Create document... ");
-
-  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath, content1.raw(), "_temperature,_humidity, _acidity, _mistOffTime, _mistOnTime, _deviceToken, _lightColor")) {
-    Serial.println("");
+    if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath, content1.raw(), "_temperature,_humidity, _acidity"))
+      Serial.println("");
     //Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
-  } else {
-    Serial.println(fbdo.errorReason());
-  }
+    else
+      Serial.println(fbdo.errorReason());
 
-  //}
+  } else {
+    content1.set("fields/_temperature/doubleValue", temperatureValue);
+    content1.set("fields/_humidity/doubleValue", humidityValue);
+    content1.set("fields/_acidity/doubleValue", pHValue);
+    content1.set("fields/_mistOffTime/integerValue", misterOffTime);
+    content1.set("fields/_mistOnTime/integerValue", misterOnTime);
+    content1.set("fields/_deviceToken/stringValue", getDeviceIDToken());
+    content1.set("fields/_lightColor/stringValue", (getLightColor() == "") ? "off" : getLightColor());
+
+    if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath, content1.raw(), "_temperature,_humidity, _acidity, _mistOffTime, _mistOnTime, _deviceToken, _lightColor"))
+      Serial.println("");
+    //Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
+    else
+      Serial.println(fbdo.errorReason());
+  }
 }
 
 
@@ -399,7 +419,7 @@ String getLightColor() {
   Serial.print("Get the lightColor... ");
 
   if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), fieldPath.c_str())) {
-    Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
+    // Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
     // Create a FirebaseJson object and set content with received payload
 
     FirebaseJson payload;
@@ -415,45 +435,45 @@ String getLightColor() {
   return lightC;
 }
 
-unsigned long getMistOff() {
-  unsigned long mistOff=0;
-  String fieldPath = "_mistOffTime";
+float getMistOff(){
+  float mistOff=0;
+  String fieldPath="_mistOffTime";
 
-  //Serial.print("Get the OFF mistingFrequency... ");
+        //Serial.print("Get the OFF mistingFrequency... ");
 
-  if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), fieldPath.c_str())) {
-    Serial.println("");
-    //Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
-    // Create a FirebaseJson object and set content with received payload
-    FirebaseJson payload;
+        if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), fieldPath.c_str())) {
+          Serial.println("");
+          Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
+           // Create a FirebaseJson object and set content with received payload
+           FirebaseJson payload;
 
-    payload.setJsonData(fbdo.payload().c_str());
+          payload.setJsonData(fbdo.payload().c_str());
 
-    // Get the data from FirebaseJson object
-    FirebaseJsonData jsonData;
-    payload.get(jsonData, "fields/_mistOffTime/doubleValue", true);
-    mistOff = jsonData.doubleValue;
-    //Serial.print("Misting Frequency value: ");
-    Serial.print("--------MISTEROFF VALUE FROM FIRESTORE-------");
-    Serial.println(mistOff);
-
-  } else {
-    Serial.println(fbdo.errorReason());
-    mistOff=misterOffTime;
-  }
-
+           // Get the data from FirebaseJson object 
+          FirebaseJsonData jsonData;
+          payload.get(jsonData, "fields/_mistOffTime/integerValue", true);
+          mistOff=jsonData.doubleValue;
+          Serial.print("--------MISTEROFF VALUE FROM FIRESTORE-------");
+          Serial.println(mistOff);
+          
+        }
+        else{
+          Serial.println(fbdo.errorReason());
+          mistOff=misterOffTime;
+        }
+    
   return mistOff;
 }
 
-unsigned long getMistOn() {
-  unsigned long mistOn=0;
+float getMistOn() {
+  float mistOn=0;
   String fieldPath = "_mistOnTime";
 
   Serial.print("Get the ON mistingFrequency... ");
 
   if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), fieldPath.c_str())) {
     Serial.println("");
-    //Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
+    Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
     // Create a FirebaseJson object and set content with received payload
     FirebaseJson payload;
 
@@ -461,7 +481,7 @@ unsigned long getMistOn() {
 
     // Get the data from FirebaseJson object
     FirebaseJsonData jsonData;
-    payload.get(jsonData, "fields/_mistOnTime/doubleValue", true);
+    payload.get(jsonData, "fields/_mistOnTime/integerValue", true);
     mistOn = jsonData.doubleValue;
     //Serial.print("Misting Frequency value: ");
     Serial.print("--------MISTERON VALUE FROM FIRESTORE-------");
@@ -483,7 +503,7 @@ String getDeviceIDToken() {
   Serial.print("Get the device ID Token... ");
 
   if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), fieldPath.c_str())) {
-    Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
+    // Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
 
     FirebaseJson payload;
     payload.setJsonData(fbdo.payload().c_str());
@@ -500,107 +520,47 @@ String getDeviceIDToken() {
   return ID;
 }
 
-void sendNotification() {
+void sendNotification(String title, String body) {
 
   Serial.print("Send Firebase Cloud Messaging... ");
   FCM_HTTPv1_JSON_Message msg;
 
   msg.token = getDeviceIDToken();
 
+  msg.notification.title = title;
+  msg.notification.body = body;
 
-  if (temperatureValue < 17 || temperatureValue > 34) {
-
-    if (temperatureValue < 17) {
-      msg.notification.title = "Low Temperature Alert!" + houseName;
-      msg.notification.body = "Temperature is below normal levels. Current temperature is " + String(temperatureValue);
-    }
-
-    else if (temperatureValue > 34) {
-      msg.notification.title = "High Temperature Alert!" + houseName;
-      msg.notification.body = "Temperature is above normal levels. Current temperature is " + String(temperatureValue);
-    }
-
-
-    // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create.ino
-    FirebaseJson payload;
-
-    msg.data = payload.raw();
-
-    if (msg.token == "") {
-      return;
-    }
-
-    if (Firebase.FCM.send(&fbdo, &msg)) {
-      Serial.printf("ok\n%s\n\n", Firebase.FCM.payload(&fbdo).c_str());
-    } else {
-      Serial.println(fbdo.errorReason());
-    }
+  if (msg.token == "") {
+    return;
   }
 
-  if (humidityValue < 80) {
-
-    msg.notification.title = "Low Humidity Alert!" + houseName;
-    msg.notification.body = "Humidity is below normal levels. Current humidity: " + String(humidityValue);
-
-    // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create.ino
-    FirebaseJson payload;
-
-    msg.data = payload.raw();
-
-
-    if (Firebase.FCM.send(&fbdo, &msg)) {
-      Serial.printf("ok\n%s\n\n", Firebase.FCM.payload(&fbdo).c_str());
-    }
-
-    else {
-      Serial.println(fbdo.errorReason());
-    }
-  }
-
-  if (pHValue < 5.5 || pHValue > 6.5) {
-
-    if (pHValue < 5.5) {
-      msg.notification.title = "Low Acidity Alert!" + houseName;
-      msg.notification.body = "Acidity is below normal levels. Current acidity is " + String(pHValue);
-    }
-
-    else if (pHValue > 6.5) {
-      msg.notification.title = "High Acidity Alert!" + houseName;
-      msg.notification.body = "Acidity is above normal levels. Current acidity is " + String(pHValue);
-    }
-
-    // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create.ino
-    FirebaseJson payload;
-
-    msg.data = payload.raw();
-
-
-    if (Firebase.FCM.send(&fbdo, &msg)) {
-      Serial.printf("ok\n%s\n\n", Firebase.FCM.payload(&fbdo).c_str());
-    }
-
-    else {
-      Serial.println(fbdo.errorReason());
-    }
+  if (Firebase.FCM.send(&fbdo, &msg)) {
+    Serial.printf("ok\n%s\n\n", Firebase.FCM.payload(&fbdo).c_str());
+  } else {
+    Serial.println(fbdo.errorReason());
   }
 }
 
 // -------------------------- Sensor Readings -----------------------
 
 void paramReading(unsigned long currentMillis) {
-  Serial.println("Param Reading Function");
   if (currentMillis - phReadingMillis >= phReadingInterval){
     phReadingMillis = currentMillis;
 
     pHValue = (int)(phRead()*10) / 10.0;
     phReadingsCount++;
     readingsSumPH += pHValue;
+
+    checkPH();
     
     Serial.println("pH Level: " + String(pHValue) + "pH");
   }
   if (currentMillis - paramReadingMillis >= paramReadingInterval) {
     temperatureValue = isnan(in_dht.readTemperature()) ? 0 : in_dht.readTemperature();
+    checkTemperature();
+
     humidityValue = isnan(in_dht.readHumidity()) ? 0 : in_dht.readHumidity();
+    checkHumidity();
 
     // upload parameters to firestore
     readingsCount++;
@@ -609,10 +569,30 @@ void paramReading(unsigned long currentMillis) {
     readingsSumInTemperature += temperatureValue;
 
     Serial.print("Humidity: " + String(humidityValue) + "%");
-    Serial.print("\tTemp In: " + String(temperatureValue) + "°C");
-
+    Serial.println("\tTemp In: " + String(temperatureValue) + "°C");
     paramReadingMillis = currentMillis;
   }
+}
+
+void checkTemperature(){
+  if (temperatureValue < 17) 
+    sendNotification("Low Temperature Alert!" + houseName, "Temperature is below normal levels. Current temperature is " + String(temperatureValue));
+  
+  if (temperatureValue > 34)
+    sendNotification("High Temperature Alert!" + houseName, "Temperature is above normal levels. Current temperature is " + String(temperatureValue));
+}
+
+void checkHumidity(){
+  if (humidityValue < 80) 
+    sendNotification("Low Humidity Alert!" + houseName, "Humidity is below normal levels. Current Humidity is " + String(humidityValue));
+}
+
+void checkPH(){
+  if (pHValue < 5.5) 
+    sendNotification("Low Acidity Alert!" + houseName, "Solution Acidity is below normal levels. Current pH Level is " + String(pHValue));
+  
+  if (pHValue > 6.5)
+    sendNotification("High Acidity Alert!" + houseName, "Solution Acidity is above normal levels. Current pH Level is " + String(pHValue));
 }
 
 void getAverage(){
@@ -629,17 +609,15 @@ void getAverage(){
   Serial.println("---------------- AVERAGE ----------------");
   Serial.print(String(averageHumid) + "\t" + String(averageTemp) + "\t" + String(averagePH));
   Serial.println();
-
-  saveAverageParamsSPIFFS();
 }
 
 float phRead() {
 
-  // digitalWrite(RED_PIN, LOW);
-  // digitalWrite(BLUE_PIN, LOW);
-  // digitalWrite(MIST_PIN, LOW);
+  digitalWrite(RED_PIN, LOW);
+  digitalWrite(BLUE_PIN, LOW);
+  digitalWrite(MIST_PIN, LOW);
 
-  // delay(3000);
+  delay(3000);
 
   float adc_resolution = 4095.0;  //ESP 32 ADC Resolution
   int measurings = 0;
@@ -686,66 +664,9 @@ void LedControl() {
 }
 
 // -------------------------- SPIFFS ----------------------------
+
+
 bool saveConfigSPIFFS() {
-  bool things = true;
-  if (!saveWiFiCredentialsSPIFFS()) things = false;
-  if (!saveAverageParamsSPIFFS()) things = false;
-  if (!saveMisterConfigSPIFFS()) things = false;
-  return things;
-}
-
-bool readConfigSPIFFS() {
-  String file_content = readFile(SPIFFS, config_filename);
-
-  int config_file_size = file_content.length();
-  Serial.println("Config file size: " + String(config_file_size));
-  Serial.println();
-
-  if (config_file_size > 256) {
-    Serial.println("Config file too large");
-    return false;
-  }
-
-  auto error = deserializeJson(doc, file_content);
-  if (error) {
-    Serial.println("Error interpreting config file");
-    return false;
-  }
-
-  Serial.println("readConfigSPIFFS() function");
-      Serial.printf("-------------------------- MISTER ON = %l------------------------------\n", misterOnTime);
-      Serial.printf("-------------------------- MISTER OFF = %l------------------------------\n", misterOffTime);
-
-  String _wifi_ssid = doc["wifi_ssid"];
-  String _wifi_password = doc["wifi_pass"];
-  const long _misterOnTime = doc["mister_on_time"];
-  const long _misterOffTime = doc["mister_off_time"];
-  const float _aHumidity = doc["humidity"];
-  const float _aTemperature = doc["temperature"];
-  const float _aPH = doc["pH"];
-
-  Serial.println("\nWi-Fi SSID from SPIFFS: " + _wifi_ssid);
-  Serial.println("Wi-Fi Pass from SPIFFS: " + _wifi_password);
-  Serial.println("Mist Maker on-time: " + String(_misterOnTime));
-  Serial.println("Mist maker off-time: " + String(_misterOffTime));
-  Serial.println("Average Humidity: " + String(_aHumidity));
-  Serial.println("Average Temperature: " + String(_aTemperature));
-  Serial.println("Average pH Level: " + String(_aPH));
-  Serial.println();
-
-  wifi_ssid = _wifi_ssid;
-  wifi_password = _wifi_password;
-  misterOnTime = _misterOnTime;
-  misterOffTime = _misterOffTime;
-  averageTemp = _aTemperature;
-  averageHumid = _aHumidity;
-  averagePH = _aPH;
-  return true;
-}
-
-
-
-bool saveWiFiCredentialsSPIFFS() {
   doc["wifi_ssid"] = wifi_ssid;
   doc["wifi_pass"] = wifi_password;
 
@@ -762,46 +683,33 @@ bool saveWiFiCredentialsSPIFFS() {
   return true;
 }
 
-bool readWiFiCredentialsSPIFFS(){
+bool readConfigSPIFFS(){
+  String file_content = readFile(SPIFFS, config_filename);
 
-}
+  int config_file_size = file_content.length();
+  Serial.println("Config file size: " + String(config_file_size));
+  Serial.println();
 
-bool saveAverageParamsSPIFFS() {
-  doc["humidity"] = averageHumid;
-  doc["temperature"] = averageTemp;
-  doc["pH"] = averagePH;
-
-  String tmp = "";
-  if (!serializeJson(doc, tmp)) {
-    Serial.println("(save average params) -> Error serializing JSON");
-    return false;
-  }
-  if (!writeFile(SPIFFS, config_filename, tmp)) {
-    Serial.println("(save average params) -> Error writing to file");
+  if(config_file_size > 256) {
+    Serial.println("Config file too large");
     return false;
   }
 
-  return true;
-}
-bool saveMisterConfigSPIFFS() {
-
-  
-  Serial.println("saveMisterConfigSPIFFS() function");
-      Serial.printf("-------------------------- MISTER ON = %l------------------------------\n, misterOnTime");
-      Serial.printf("-------------------------- MISTER OFF = %l------------------------------\n, misterOffTime");  
-
-  doc["mister_on_time"] = String(misterOnTime);
-  doc["mister_off_time"] = String(misterOffTime);
-
-  String tmp = "";
-  if (!serializeJson(doc, tmp)) {
-    Serial.println("save wifi credentials -> Error serializing JSON");
+  auto error = deserializeJson(doc, file_content);
+  if(error){
+    Serial.println("Error interpreting config file");
     return false;
   }
-  if (!writeFile(SPIFFS, config_filename, tmp)) {
-    Serial.println("save wifi credentials -> Error writing to file");
-    return false;
-  }
+
+  String _wifi_ssid = doc["wifi_ssid"];
+  String _wifi_password = doc["wifi_pass"];
+
+  wifi_ssid = _wifi_ssid;
+  wifi_password = _wifi_password;
+
+  Serial.println("\nWi-Fi SSID from SPIFFS: " + wifi_ssid);
+  Serial.println("Wi-Fi Pass from SPIFFS: " + wifi_password);
+  Serial.println();
 
   return true;
 }
@@ -855,13 +763,13 @@ void handleSaveWiFiCredentials() {
     const String _wifi_ssid = server.arg("ssid");
     const String _wifi_password = server.arg("password");
 
-    Serial.println("SSID from WebServer: " + _wifi_ssid);
-    Serial.println("SSID from WebServer: " + _wifi_password);
-
     wifi_ssid = _wifi_ssid;
     wifi_password = _wifi_password;
 
-    if (saveWiFiCredentialsSPIFFS()) {
+    Serial.println("SSID from WebServer: " + wifi_ssid);
+    Serial.println("Pass from WebServer: " + wifi_password);
+
+    if (saveConfigSPIFFS()) {
       Serial.println("saveWiFi -> saved Wi-Fi Credentials");
     }
 
@@ -873,7 +781,7 @@ void handleSaveWiFiCredentials() {
     Serial.println("null");
     wifi_ssid = _wifi_ssid;
     wifi_password = "";
-    if (saveWiFiCredentialsSPIFFS()) {
+    if (saveConfigSPIFFS()) {
       Serial.println("saveWiFi -> saved Wi-Fi Credentials");
     }
     connectWiFi();
@@ -886,11 +794,6 @@ void handleSaveWiFiCredentials() {
 void handlesaveMisterConfig() {
   if (server.hasArg("onTime") && server.hasArg("offTime")) {
 
-    
-  Serial.println("handlesaveMisterConfig() function");
-      Serial.printf("-------------------------- MISTER ON = %l------------------------------\n, misterOnTime");
-      Serial.printf("-------------------------- MISTER OFF = %l------------------------------\n, misterOffTime"); 
-
     String MisterOnTime = server.arg("onTime");
     String MisterOffTime = server.arg("offTime");
 
@@ -899,10 +802,6 @@ void handlesaveMisterConfig() {
 
     Serial.println(misterOnTime);
     Serial.println(misterOffTime);
-
-    if (saveMisterConfigSPIFFS()) {
-      Serial.println("saveMisterConfig -> saved Mister Configuration");
-    }
 
     server.send(200, "text/html", "Mist Maker Configuration saved successfully." + refreshPage(3));
   } else {
@@ -999,7 +898,7 @@ String SendHTML() {
 
   webpage += "<p><a class=\"button\" href=\"/connectWiFi\">Connect to Wi-Fi</a></p>       ";
 
-  webpage += refreshPage(10);
+  webpage += refreshPage(3);
 
   webpage += "</body></html>";
 
